@@ -1,11 +1,17 @@
 # Mod Info
-Enhanced Stream Chat is a rich text stream chat integration mod (currently supports Twitch/YouTube) with full unicode, emote, cheermote, and emoji support.
+Enhanced Stream Chat is a rich text stream chat integration mod (currently supports Twitch/YouTube/Bilibili) with full unicode, emote, cheermote, and emoji support.
 
 # Features
-- Full Rich Text Support, see ALL of your Twitch/YouTube chat while immersed in VR!
+- Full Rich Text Support, see ALL of your Twitch/YouTube/Bilibili chat while immersed in VR!
   - This includes all Twitch badges, emotes, cheermotes, BetterTwitchTV emotes, FrankerFaceZ emotes, all Emojis (provided by [twemoji](https://github.com/twitter/twemoji)) and even animated emotes!
   - On YouTube, the users profile image will be shown alongside their username.
   - This also includes full Unicode Support! This means you can enjoy the chat in any language!
+  
+# Bilibili Support
+- Bilibili Live Danmuku
+- Custom switches (Danmuku, Popularity, Gift, Guard, Anchor, Welcome, Global, Blacklist, Room Info), you decide what shows up!
+- No Login Needed
+- Short room number is support
 
 # Dependencies
 Enhanced Stream Chat depends on [BSML](https://github.com/monkeymanboy/BeatSaberMarkupLanguage), and [StreamCore](https://github.com/brian91292/StreamCore/releases). Make sure to install them, or Enhanced Stream Chat won't work!
