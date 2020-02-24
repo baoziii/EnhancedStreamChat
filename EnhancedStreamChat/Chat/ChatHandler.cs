@@ -20,12 +20,13 @@ using System.Text.RegularExpressions;
 using EnhancedStreamChat.Images;
 using StreamCore.YouTube;
 using StreamCore.Twitch;
+using StreamCore.Bilibili;
 using System.Text;
 using System.Diagnostics;
 
 namespace EnhancedStreamChat
 {
-    public class ChatHandler : MonoBehaviour, ITwitchIntegration, IYouTubeIntegration
+    public class ChatHandler : MonoBehaviour, ITwitchIntegration, IYouTubeIntegration, IBilibiliIntegration
     {
         public static ChatHandler Instance = null;
         public static ConcurrentQueue<ChatMessage> RenderQueue = new ConcurrentQueue<ChatMessage>();
@@ -56,7 +57,9 @@ namespace EnhancedStreamChat
         private CustomText _testMessage = null;
         private readonly WaitUntil _delay = new WaitUntil(() => { return Instance._waitForFrames == 0; });
         private bool _hasDisplayedTwitchStatus = false;
+        private bool _hasDisplayedBilibiliStatus = false;
         private string _lastRoomId = String.Empty;
+        private int _lastRoomIdBilibili = 0;
         private DateTime _statusDisplayDelayTime = DateTime.Now;
 
         bool IGenericChatIntegration.IsPluginReady { get; set; }
@@ -137,7 +140,7 @@ namespace EnhancedStreamChat
         private void HandleStatusMessages()
         {
             // Wait a few seconds after we've connect to the chat, then send our welcome message
-            if (!_hasDisplayedTwitchStatus && TwitchWebSocketClient.Initialized)
+            if ((!_hasDisplayedTwitchStatus && TwitchWebSocketClient.Initialized) || (!_hasDisplayedBilibiliStatus && BilibiliWebSocketClient.Initialized))
             {
                 // If the last room id hasn't been set, allow up to a 30 second timeout before we throw an error
                 if ((DateTime.Now - _statusDisplayDelayTime).TotalSeconds < 30)
@@ -156,10 +159,25 @@ namespace EnhancedStreamChat
                 else
                     msg = "<color=#FF0000FF>Twitch Error: Twitch login attempt failed. Ensure your login data is correct in UserData\\StreamCore\\TwitchLoginInfo.ini, then try again.</color>";
 
-                if(msg != null)
+                if (msg != null)
                     RenderQueue.Enqueue(new ChatMessage(msg, new GenericChatMessage()));
 
+                string msgBilibili = null;
+                if (BilibiliWebSocketClient.Connected && BilibiliWebSocketClient.LoggedIn)
+                {
+                    if (!BilibiliWebSocketClient.IsChannelValid && BilibiliLoginConfig.Instance.BilibiliChannelId != 0)
+                    {
+                        msgBilibili = $"<color=#FF0000FF>Bilibili Error: Failed to join channel \"{BilibiliLoginConfig.Instance.BilibiliChannelId}\". Please enter a valid Bilibili channel Id in the Enhanced Stream Chat settings submenu, or manually in BilibiliLoginInfo.ini, then try again.</color>";
+                    }
+                }
+                else
+                    msgBilibili = "<color=#FF0000FF>Bilibili Error: Bilibili login attempt failed. Ensure your cookie is correct in UserData\\StreamCore\\BilibiliLoginInfo.ini, then try again.</color>";
+
+                if (msgBilibili != null)
+                    RenderQueue.Enqueue(new ChatMessage(msgBilibili, new GenericChatMessage()));
+
                 _hasDisplayedTwitchStatus = true;
+                _hasDisplayedBilibiliStatus = true;
             }
         }
 
@@ -198,7 +216,6 @@ namespace EnhancedStreamChat
                             return;
                         if (ChatConfig.instance.FilterSelfMessages && messageToSend.origMessage.user.id == TwitchWebSocketClient.OurTwitchUser.id)
                             return;
-
                         if (ChatMessageFilters != null)
                         {
                             foreach (var filter in ChatMessageFilters.GetInvocationList())
@@ -282,8 +299,8 @@ namespace EnhancedStreamChat
                 _statusDisplayDelayTime = TwitchWebSocketClient.ConnectionTime;
                 if (TwitchLoginConfig.Instance.TwitchChannelName == String.Empty)
                 {
-                    RenderQueue.Enqueue(new ChatMessage("Welcome to Enhanced Stream Chat! You must configure at least one chat service to continue, read the instructions at https://github.com/brian91292/StreamCore for more information.", new GenericChatMessage()));
-                }
+/*                    RenderQueue.Enqueue(new ChatMessage("Welcome to Enhanced Stream Chat! You must configure at least one chat service to continue, read the instructions at https://github.com/brian91292/StreamCore for more information.", new GenericChatMessage()));
+*/                }
                 else
                 {
                     RenderQueue.Enqueue(new ChatMessage("Connecting to Twitch chat...", new GenericChatMessage()));
@@ -384,6 +401,33 @@ namespace EnhancedStreamChat
                 if (msgId == String.Empty) return;
                 PurgeChatMessageById(msgId);
             };
+
+            BilibiliWebSocketClient.OnConfigUpdated += () =>
+            {
+                _lastRoomIdBilibili = 0;
+                _statusDisplayDelayTime = DateTime.Now;
+                _hasDisplayedBilibiliStatus = false;
+            };
+
+            BilibiliWebSocketClient.OnConnected += () =>
+            {
+                _statusDisplayDelayTime = BilibiliWebSocketClient.ConnectionTime;
+                if (BilibiliLoginConfig.Instance.BilibiliChannelId == 0)
+                {
+                    RenderQueue.Enqueue(new ChatMessage("Welcome to Enhanced Stream Chat! You must configure at least one chat service to continue, read the instructions at https://github.com/brian91292/StreamCore for more information.", new GenericChatMessage()));
+                }
+                else
+                {
+                    RenderQueue.Enqueue(new ChatMessage("【系统】正在连接Bilibili (￣3￣)", new GenericChatMessage()));
+                }
+            };
+
+            BilibiliMessageHandlers.OnMessageReceived += (bilibiliMsg) =>
+            {
+                RenderQueue.Enqueue(new ChatMessage(bilibiliMsg.message, new GenericChatMessage()));
+                /*MessageParser.Parse(new ChatMessage(bilibiliMsg.message, new GenericChatMessage()));*/
+            };
+
         }
 
         private void InitializeChatUI()

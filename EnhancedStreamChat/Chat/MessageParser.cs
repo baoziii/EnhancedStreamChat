@@ -22,6 +22,7 @@ using EnhancedStreamChat.Textures;
 using StreamCore.Chat;
 using StreamCore.YouTube;
 using StreamCore.Twitch;
+using StreamCore.Bilibili;
 using System.Globalization;
 
 namespace EnhancedStreamChat.Chat
@@ -310,6 +311,15 @@ namespace EnhancedStreamChat.Chat
         }
     }
 
+    public static class BilibiliMessageExtensions
+    {
+        public static void Parse(this BilibiliMessage message, ref char imgPlacementDesignator, ref StringBuilder messageBuilder, ChatMessage chatMessage)
+        {
+            chatMessage.origMessage.user = new BilibiliUser();
+            chatMessage.origMessage.user.color = "ffffff";
+            chatMessage.origMessage.user.displayName = "testname";
+        }
+    }
 
     public class MessageParser : MonoBehaviour
     {
@@ -321,7 +331,7 @@ namespace EnhancedStreamChat.Chat
         private static readonly Dictionary<string, EmoteInfo> _emojiInfoByName = new Dictionary<string, EmoteInfo>();
         private static char imgPlacementDesignator = (char)0xE000;
 
-        public static async void Parse(ChatMessage chatMessage)
+        public static void Parse(ChatMessage chatMessage)
         {
             _messageBuilder.Clear();
 
@@ -356,7 +366,6 @@ namespace EnhancedStreamChat.Chat
             });
 
             _messageBuilder.Append(chatMessage.displayMsg);
-
             bool isActionMessage = false;
             if (chatMessage.origMessage is TwitchMessage)
             {
@@ -366,9 +375,24 @@ namespace EnhancedStreamChat.Chat
             {
                 chatMessage.origMessage.YouTube.Parse(ref imgPlacementDesignator, ref _messageBuilder, chatMessage);
             }
-
-            string displayColor = chatMessage.origMessage.user.color;
+            else if (chatMessage.origMessage is BilibiliMessage)
+            {
+                /*Plugin.Log("Is bilibli message!");*/
+                chatMessage.origMessage.Bilibili.Parse(ref imgPlacementDesignator, ref _messageBuilder, chatMessage);
+            }
+            /*Plugin.Log("Parse 1");*/
+            string displayColor = "";
+            try
+            {
+                displayColor = chatMessage.origMessage.user.color;
+            }
+            catch (Exception ex) {
+                Plugin.Log(ex.ToString());
+            }
+            /*Plugin.Log("displayColor: " + displayColor);*/
             int nameHash = chatMessage.origMessage.user.displayName.GetHashCode();
+            /*Plugin.Log("nameHash: " + nameHash);
+            Plugin.Log("Parse 2");*/
             // If the user doesn't already have a displayColor, generate one and store it for later user
             if (string.IsNullOrEmpty(displayColor) && !_userColors.TryGetValue(nameHash, out displayColor))
             {
@@ -385,19 +409,21 @@ namespace EnhancedStreamChat.Chat
                 _userColors.Add(nameHash, colorString);
                 displayColor = colorString;
             }
+            /*Plugin.Log("Parse 3");*/
             // Set the final displayColor to our message
             chatMessage.displayColor = displayColor;
-
+            /*Plugin.Log("Parse 4");*/
             _messageBuilder.Insert(0, $"<color={chatMessage.displayColor}><b>{chatMessage.origMessage.user.displayName}</b>{(!isActionMessage ? "</color>:" : "")} ");
             _messageBuilder.Append($"{(isActionMessage ? "</color>" : "")}");
-
-            if(chatMessage.origMessage is TwitchMessage)
+            /*Plugin.Log("Parse 5");*/
+            if (chatMessage.origMessage is TwitchMessage)
             {
                 chatMessage.origMessage.Twitch.ParseBadges(ref imgPlacementDesignator, ref _messageBuilder, chatMessage);
             }
-
+            /*Plugin.Log("Parse 6");*/
             // Finally, push the final message into the render queue
             chatMessage.displayMsg = _messageBuilder.ToString();
+            /*Plugin.Log("The message in queue is " + chatMessage.displayMsg);*/
             ChatHandler.RenderQueue.Enqueue(chatMessage);
         }
     };

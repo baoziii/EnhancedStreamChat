@@ -41,6 +41,20 @@ namespace EnhancedStreamChat.Config
             }
         }
 
+        [UIValue("bilibili-channel-id")]
+        public string BilibiliChannelId
+        {
+            get => "" + BilibiliLoginConfig.Instance?.BilibiliChannelId;
+            set
+            {
+                if (BilibiliLoginConfig.Instance != null)
+                {
+                    BilibiliLoginConfig.Instance.BilibiliChannelId = int.Parse(value);
+                    BilibiliLoginConfig.Instance.Save(true);
+                }
+            }
+        }
+
         [UIAction("#apply")]
         private void Apply()
         {

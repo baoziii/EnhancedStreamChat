@@ -1,5 +1,6 @@
 ﻿<settings-container>
   <string-setting value="twitch-channel-name" text="Twitch Channel Name" hover-hint="The name of the channel you want Enhanced Twitch Chat to monitor"></string-setting>
+  <string-setting value="bilibili-channel-id" text="Bilibili Channel Id" hover-hint="The id number of the channel you want Enhanced Bilibili Chat to monitor"></string-setting>
   <settings-submenu text="Filters" hover-hint="Enable or disable various chat filters to keep your chat tidy.">
     <scrollable-settings-container>
       <clickable-text text="Back" click-event="back"></clickable-text>
