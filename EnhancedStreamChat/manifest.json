@@ -1,0 +1,15 @@
+{
+  "$schema": "https://raw.githubusercontent.com/nike4613/ModSaber-MetadataFileSchema/master/Schema.json",
+  "author": "brian91292",
+  "description": "A rich text chat integration mod with full unicode, emote, and emoji support!",
+  "gameVersion": "1.8.0",
+  "id": "EnhancedStreamChat",
+  "name": "EnhancedStreamChat",
+  "version": "2.3.0",
+  "dependsOn": {
+	"BeatSaberMarkupLanguage": "^1.2.0",
+	"StreamCore": "^2.2.5",
+  },
+  "features": [
+  ]
+} 
